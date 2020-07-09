@@ -37,6 +37,21 @@ export default function Application(props) {
     })
   }, []);
 
+  function bookInterview(id, interview, cb) {
+    const appointment = {
+      ...state.appointments[id],
+      interview: { ...interview }
+    };
+    const appointments = {
+      ...state.appointments,
+      [id]: appointment
+    };
+    axios.put(`/api/appointments/${id}`, { interview })
+      .then(res => {
+        setState({ ...state, appointments });
+        cb()
+      })
+  }
   // get interviewers for day
   const interviewers = getInterviewersByDay(state, state.day)
   // searching for specific day's appointments
@@ -46,9 +61,11 @@ export default function Application(props) {
     const interview = getInterview(state, apt.interview);
     return <Appointment
       key={apt.id}
+      id={apt.id}
       time={apt.time}
       interview={interview}
       interviewers={interviewers}
+      bookInterview={bookInterview}
     />
   });
 

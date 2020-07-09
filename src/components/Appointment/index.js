@@ -22,6 +22,15 @@ export default function Appointment(props) {
   const onAdd = () => transition(CREATE);
   const onCancel = () => back();
 
+  function save(name, interviewer) {
+    const interview = {
+      student: name,
+      interviewer
+    };
+    const showMode = () => transition(SHOW);
+    props.bookInterview(props.id, interview, showMode)
+  }
+
   return (
     <Fragment>
       <Header time={props.time} />
@@ -34,7 +43,7 @@ export default function Appointment(props) {
           onDelete={props.onDelete}
         />
       )}
-      {mode === CREATE && <Form interviewers={props.interviewers} onCancel={onCancel} />}
+      {mode === CREATE && <Form interviewers={props.interviewers} onCancel={onCancel} onSave={save} />}
 
     </Fragment>
   )
