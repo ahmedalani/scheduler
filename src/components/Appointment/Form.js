@@ -6,7 +6,7 @@ import InterviewerList from '../InterviewerList';
 export default function Form(props) {
 
   const [name, setName] = useState(props.name || '');
-  const [interviewer, setInterviewer] = useState(props.interviewer || null);
+  const [interviewer, setInterviewer] = useState(props.interviewerId || null);
 
   const reset = () => {
     setName('');
@@ -19,7 +19,6 @@ export default function Form(props) {
   const save = () => {
     props.onSave(name, interviewer)
   }
-
   return (
     <main className="appointment__card appointment__card--create">
       <section className="appointment__card-left">
