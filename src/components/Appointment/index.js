@@ -58,15 +58,8 @@ export default function Appointment(props) {
   return (
     <Fragment>
       <Header time={time} />
-      {mode === EMPTY && <Empty onAdd={onAdd} />}
-      {mode === SHOW && (
-        <Show
-          student={interview.student}
-          interviewer={interview.interviewer}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      )}
+      {mode === EMPTY && id !== 'last' && <Empty onAdd={onAdd} />}
+      {mode === SHOW && <Show student={interview.student} interviewer={interview.interviewer} onEdit={onEdit} onDelete={onDelete} />}
       {mode === CREATE && <Form interviewers={interviewers} onCancel={onCancel} onSave={save} />}
       {mode === EDIT && <Form interviewers={interviewers} onCancel={onCancel} onSave={save} name={interview.student} interviewerId={interview.interviewer.id} />}
       {mode === SAVING && <Status message={'SAVING'} />}
@@ -74,8 +67,6 @@ export default function Appointment(props) {
       {mode === CONFIRM && <Confirm message={'Are you sure?'} onCancel={onCancel} onConfirm={onDelete} />}
       {mode === ERROR_SAVE && <Error message={'could not save appointment'} onClose={onCancel} />}
       {mode === ERROR_DELETE && <Error message={'could not delete appointment'} onClose={onCancel} />}
-
-
     </Fragment>
   )
 }

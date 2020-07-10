@@ -54,8 +54,7 @@ export default function Application(props) {
       </section>
       <section className="schedule">
         {appointmentItems}
-        {/* the bellow isn't working properly, CSS issue probably, it shoul only show header with time (5pm) but int's showing the add "+" as if the spot is available!*/}
-        {/* <Appointment key="last" time="5pm" /> */}
+        <Appointment key="last" id="last" time="5pm" />
       </section>
     </main>
   );
