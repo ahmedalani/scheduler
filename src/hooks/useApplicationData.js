@@ -28,6 +28,17 @@ export default function useApplicationData() {
   const setDay = (day) => setState({ ...state, day });
 
   function bookInterview(id, interview) {
+    const days = [...state.days];
+    // reducing the spots only when creating (not when editing) new booking without imutating the state
+    if (!state.appointments[id].interview) {
+      state.days.forEach((dayObj, i) => {
+        if (dayObj.name === state.day) {
+          const day = { ...dayObj }
+          day.spots--
+          days[i] = day
+        }
+      })
+    }
     const appointment = {
       ...state.appointments[id],
       interview: { ...interview }
@@ -36,8 +47,9 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
+
     return axios.put(`/api/appointments/${id}`, { interview })
-      .then(res => setState({ ...state, appointments }))
+      .then(res => setState({ ...state, appointments, days }))
   }
   function cancelInterview(id) {
     const appointment = {
@@ -48,8 +60,17 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
+    // increasing the spots after deleting a booking without imutating the state
+    const days = [...state.days];
+    state.days.forEach((dayObj, i) => {
+      if (dayObj.name === state.day) {
+        const day = { ...dayObj }
+        day.spots++
+        days[i] = day
+      }
+    })
     return axios.delete(`/api/appointments/${id}`, { "interview": null })
-      .then(res => setState({ ...state, appointments }))
+      .then(res => setState({ ...state, appointments, days }))
   }
 
   return { state, setDay, bookInterview, cancelInterview }
