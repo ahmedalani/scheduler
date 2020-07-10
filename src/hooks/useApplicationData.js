@@ -1,14 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
 import axios from 'axios';
 
 export default function useApplicationData() {
   // state!
-  const [state, setState] = useState({
+  const initialState = {
     day: 'Monday',
     days: [],
     appointments: {},
     interviewers: {}
-  })
+  }
+  // reducer types
+  const SET_DAY = "SET_DAY";
+  const SET_APPLICATION_DATA = "SET_APPLICATION_DATA";
+  const SET_INTERVIEW = "SET_INTERVIEW";
+
+  function reducer(state, action) {
+    switch (action.type) {
+      case SET_DAY:
+        return { ...state, day: action.value }
+      case SET_APPLICATION_DATA:
+        {
+          const { days, appointments, interviewers } = action.payload
+          return { ...state, days, appointments, interviewers }
+        }
+      case SET_INTERVIEW: {
+        const { appointments, days } = action.payload
+        return { ...state, appointments, days }
+      }
+      default:
+        // return state
+        throw new Error(
+          `Tried to reduce with unsupported action type: ${action.type}`
+        );
+    }
+  }
+  const [state, dispatch] = useReducer(reducer, initialState)
+
 
   // effect hook to fetch data (days, appts) from api then update the state, depends on [] to stop infinit calls
   useEffect(() => {
@@ -20,12 +47,12 @@ export default function useApplicationData() {
       const days = all[0].data;
       const appointments = all[1].data;
       const interviewers = all[2].data;
-      setState(prev => ({ ...prev, days, appointments, interviewers }))
+      dispatch({ type: SET_APPLICATION_DATA, payload: { days, appointments, interviewers } })
     })
   }, []);
 
   // onClick handler for day from DayListItem to select day
-  const setDay = (day) => setState({ ...state, day });
+  const setDay = (day) => dispatch({ type: SET_DAY, value: day });
 
   function bookInterview(id, interview) {
     const days = [...state.days];
@@ -49,7 +76,7 @@ export default function useApplicationData() {
     };
 
     return axios.put(`/api/appointments/${id}`, { interview })
-      .then(res => setState({ ...state, appointments, days }))
+      .then(res => dispatch({ type: SET_INTERVIEW, payload: { appointments, days } }))
   }
   function cancelInterview(id) {
     const appointment = {
@@ -70,7 +97,7 @@ export default function useApplicationData() {
       }
     })
     return axios.delete(`/api/appointments/${id}`, { "interview": null })
-      .then(res => setState({ ...state, appointments, days }))
+      .then(res => dispatch({ type: SET_INTERVIEW, payload: { appointments, days } }))
   }
 
   return { state, setDay, bookInterview, cancelInterview }
