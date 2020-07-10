@@ -29,7 +29,7 @@ export default function useApplicationData() {
 
   function bookInterview(id, interview) {
     const days = [...state.days];
-    // reducing the spots only when creating (not when editing) new booking without imutating the state
+    // reducing the spots only when creating (not when editing) new booking without mutating the state
     if (!state.appointments[id].interview) {
       state.days.forEach((dayObj, i) => {
         if (dayObj.name === state.day) {
@@ -60,7 +60,7 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment
     };
-    // increasing the spots after deleting a booking without imutating the state
+    // increasing the spots after deleting a booking without mutating the state
     const days = [...state.days];
     state.days.forEach((dayObj, i) => {
       if (dayObj.name === state.day) {
