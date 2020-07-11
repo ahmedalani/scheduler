@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react';
 import axios from 'axios';
+const webSocket = new WebSocket('ws://localhost:8001');
 
 export default function useApplicationData() {
   // state!
@@ -13,6 +14,7 @@ export default function useApplicationData() {
   const SET_DAY = "SET_DAY";
   const SET_APPLICATION_DATA = "SET_APPLICATION_DATA";
   const SET_INTERVIEW = "SET_INTERVIEW";
+  const UPDATE_INTERVIEW = "UPDATE_INTERVIEW";
 
   function reducer(state, action) {
     switch (action.type) {
@@ -26,6 +28,19 @@ export default function useApplicationData() {
       case SET_INTERVIEW: {
         const { appointments, days } = action.payload
         return { ...state, appointments, days }
+      }
+      // listen to websocket updates
+      case UPDATE_INTERVIEW: {
+        const { id, interview } = action.payload;
+        const appointment = {
+          ...state.appointments[id],
+          interview
+        };
+        const appointments = {
+          ...state.appointments,
+          [id]: appointment
+        };
+        return { ...state, appointments }
       }
       default:
         // return state
@@ -49,7 +64,17 @@ export default function useApplicationData() {
       const interviewers = all[2].data;
       dispatch({ type: SET_APPLICATION_DATA, payload: { days, appointments, interviewers } })
     })
+    // realtime update appointments after websocket connection established
+    webSocket.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      if (msg.type === SET_INTERVIEW) {
+        const { id, interview } = msg
+        // console.log('----', typeof interview, interview)
+        dispatch({ type: UPDATE_INTERVIEW, payload: { id, interview } })
+      }
+    }
   }, []);
+
 
   // onClick handler for day from DayListItem to select day
   const setDay = (day) => dispatch({ type: SET_DAY, value: day });

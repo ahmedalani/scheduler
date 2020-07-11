@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect } from 'react';
 
 import './styles.scss';
 import Header from './Header';
@@ -29,20 +29,34 @@ export default function Appointment(props) {
   const { mode, transition, back } = useVisualMode(
     interview ? SHOW : EMPTY
   );
+  // to handle websocket updates
+  useEffect(() => {
+    if (interview && mode === EMPTY) {
+      transition(SHOW);
+    }
+    if (interview === null && mode === SHOW) {
+      transition(EMPTY);
+    }
+  }, [interview, transition, mode]);
 
   const onAdd = () => transition(CREATE);
   const onCancel = () => back();
   const onEdit = () => transition(EDIT);
 
   function save(name, interviewer) {
-    const interview = {
-      student: name,
-      interviewer
-    };
-    transition(SAVING)
-    bookInterview(id, interview)
-      .then(() => transition(SHOW))
-      .catch(() => transition(ERROR_SAVE))
+    // ask nori what's the best way to handle this error?
+    if (interviewer) {
+      const interview = {
+        student: name,
+        interviewer
+      };
+      transition(SAVING)
+      bookInterview(id, interview)
+        .then(() => transition(SHOW))
+        .catch(() => transition(ERROR_SAVE))
+    } else {
+      console.log('zmal!')
+    }
   }
   const onDelete = (confirmed) => {
     if (confirmed === 'confirmed') {
@@ -59,7 +73,7 @@ export default function Appointment(props) {
     <Fragment>
       <Header time={time} />
       {mode === EMPTY && id !== 'last' && <Empty onAdd={onAdd} />}
-      {mode === SHOW && <Show student={interview.student} interviewer={interview.interviewer} onEdit={onEdit} onDelete={onDelete} />}
+      {mode === SHOW && interview && <Show student={interview.student} interviewer={interview.interviewer} onEdit={onEdit} onDelete={onDelete} />}
       {mode === CREATE && <Form interviewers={interviewers} onCancel={onCancel} onSave={save} />}
       {mode === EDIT && <Form interviewers={interviewers} onCancel={onCancel} onSave={save} name={interview.student} interviewerId={interview.interviewer.id} />}
       {mode === SAVING && <Status message={'SAVING'} />}
