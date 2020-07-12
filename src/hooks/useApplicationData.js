@@ -1,15 +1,15 @@
-import { useEffect, useReducer } from 'react';
-import axios from 'axios';
-const webSocket = new WebSocket('ws://localhost:8001');
+import { useEffect, useReducer } from "react";
+import axios from "axios";
+const webSocket = new WebSocket("ws://localhost:8001");
 
 export default function useApplicationData() {
   // state!
   const initialState = {
-    day: 'Monday',
+    day: "Monday",
     days: [],
     appointments: {},
-    interviewers: {}
-  }
+    interviewers: {},
+  };
   // reducer types
   const SET_DAY = "SET_DAY";
   const SET_APPLICATION_DATA = "SET_APPLICATION_DATA";
@@ -19,28 +19,27 @@ export default function useApplicationData() {
   function reducer(state, action) {
     switch (action.type) {
       case SET_DAY:
-        return { ...state, day: action.value }
-      case SET_APPLICATION_DATA:
-        {
-          const { days, appointments, interviewers } = action.payload
-          return { ...state, days, appointments, interviewers }
-        }
+        return { ...state, day: action.value };
+      case SET_APPLICATION_DATA: {
+        const { days, appointments, interviewers } = action.payload;
+        return { ...state, days, appointments, interviewers };
+      }
       case SET_INTERVIEW: {
-        const { appointments, days } = action.payload
-        return { ...state, appointments, days }
+        const { appointments, days } = action.payload;
+        return { ...state, appointments, days };
       }
       // listen to websocket updates
       case UPDATE_INTERVIEW: {
         const { id, interview } = action.payload;
         const appointment = {
           ...state.appointments[id],
-          interview
+          interview,
         };
         const appointments = {
           ...state.appointments,
-          [id]: appointment
+          [id]: appointment,
         };
-        return { ...state, appointments }
+        return { ...state, appointments };
       }
       default:
         // return state
@@ -49,32 +48,34 @@ export default function useApplicationData() {
         );
     }
   }
-  const [state, dispatch] = useReducer(reducer, initialState)
-
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   // effect hook to fetch data (days, appts) from api then update the state, depends on [] to stop infinit calls
   useEffect(() => {
     Promise.all([
-      Promise.resolve(axios.get('api/days')),
-      Promise.resolve(axios.get('/api/appointments')),
-      Promise.resolve(axios.get('/api/interviewers'))
+      // 🔥before merging "testing" branch make sure it works with the new "/" added for /api/days
+      Promise.resolve(axios.get("/api/days")),
+      Promise.resolve(axios.get("/api/appointments")),
+      Promise.resolve(axios.get("/api/interviewers")),
     ]).then((all) => {
       const days = all[0].data;
       const appointments = all[1].data;
       const interviewers = all[2].data;
-      dispatch({ type: SET_APPLICATION_DATA, payload: { days, appointments, interviewers } })
-    })
+      dispatch({
+        type: SET_APPLICATION_DATA,
+        payload: { days, appointments, interviewers },
+      });
+    });
     // realtime update appointments after websocket connection established
     webSocket.onmessage = (e) => {
-      const msg = JSON.parse(e.data)
+      const msg = JSON.parse(e.data);
       if (msg.type === SET_INTERVIEW) {
-        const { id, interview } = msg
+        const { id, interview } = msg;
         // console.log('----', typeof interview, interview)
-        dispatch({ type: UPDATE_INTERVIEW, payload: { id, interview } })
+        dispatch({ type: UPDATE_INTERVIEW, payload: { id, interview } });
       }
-    }
+    };
   }, []);
-
 
   // onClick handler for day from DayListItem to select day
   const setDay = (day) => dispatch({ type: SET_DAY, value: day });
@@ -85,45 +86,51 @@ export default function useApplicationData() {
     if (!state.appointments[id].interview) {
       state.days.forEach((dayObj, i) => {
         if (dayObj.name === state.day) {
-          const day = { ...dayObj }
-          day.spots--
-          days[i] = day
+          const day = { ...dayObj };
+          day.spots--;
+          days[i] = day;
         }
-      })
+      });
     }
     const appointment = {
       ...state.appointments[id],
-      interview: { ...interview }
+      interview: { ...interview },
     };
     const appointments = {
       ...state.appointments,
-      [id]: appointment
+      [id]: appointment,
     };
 
-    return axios.put(`/api/appointments/${id}`, { interview })
-      .then(res => dispatch({ type: SET_INTERVIEW, payload: { appointments, days } }))
+    return axios
+      .put(`/api/appointments/${id}`, { interview })
+      .then((res) =>
+        dispatch({ type: SET_INTERVIEW, payload: { appointments, days } })
+      );
   }
   function cancelInterview(id) {
     const appointment = {
       ...state.appointments[id],
-      interview: null
+      interview: null,
     };
     const appointments = {
       ...state.appointments,
-      [id]: appointment
+      [id]: appointment,
     };
     // increasing the spots after deleting a booking without mutating the state
     const days = [...state.days];
     state.days.forEach((dayObj, i) => {
       if (dayObj.name === state.day) {
-        const day = { ...dayObj }
-        day.spots++
-        days[i] = day
+        const day = { ...dayObj };
+        day.spots++;
+        days[i] = day;
       }
-    })
-    return axios.delete(`/api/appointments/${id}`, { "interview": null })
-      .then(res => dispatch({ type: SET_INTERVIEW, payload: { appointments, days } }))
+    });
+    return axios
+      .delete(`/api/appointments/${id}`, { interview: null })
+      .then((res) =>
+        dispatch({ type: SET_INTERVIEW, payload: { appointments, days } })
+      );
   }
 
-  return { state, setDay, bookInterview, cancelInterview }
+  return { state, setDay, bookInterview, cancelInterview };
 }
