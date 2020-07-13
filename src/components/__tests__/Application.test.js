@@ -10,7 +10,6 @@ import {
   getAllByTestId,
   getByAltText,
   getByPlaceholderText,
-  prettyDOM,
   queryByText,
   queryByAltText,
 } from "@testing-library/react";
