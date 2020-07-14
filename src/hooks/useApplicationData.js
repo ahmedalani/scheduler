@@ -1,7 +1,8 @@
 import { useEffect, useReducer } from "react";
 import axios from "axios";
-const webSocket = new WebSocket("ws://localhost:8001");
+const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 8001;
 
+const webSocket = new WebSocket(WEBSOCKET_URL);
 export default function useApplicationData() {
   // state!
   const initialState = {
