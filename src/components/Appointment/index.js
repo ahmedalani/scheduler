@@ -48,19 +48,14 @@ export default function Appointment(props) {
   const onEdit = () => transition(EDIT);
 
   function save(name, interviewer) {
-    // ask nori what's the best way to handle this error?
-    if (interviewer) {
-      const interview = {
-        student: name,
-        interviewer,
-      };
-      transition(SAVING);
-      bookInterview(id, interview)
-        .then(() => transition(SHOW))
-        .catch(() => transition(ERROR_SAVE));
-    } else {
-      console.log("zmal!");
-    }
+    const interview = {
+      student: name,
+      interviewer,
+    };
+    transition(SAVING);
+    bookInterview(id, interview)
+      .then(() => transition(SHOW))
+      .catch(() => transition(ERROR_SAVE));
   }
   const onDelete = (confirmed) => {
     if (confirmed === "confirmed") {

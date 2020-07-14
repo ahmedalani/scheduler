@@ -39,7 +39,26 @@ export default function useApplicationData() {
           ...state.appointments,
           [id]: appointment,
         };
-        return { ...state, appointments };
+        const days = [...state.days];
+        // reducing the spots
+        if (!state.appointments[id].interview) {
+          days.forEach((dayObj, i) => {
+            if (dayObj.name === state.day) {
+              const day = { ...dayObj };
+              day.spots--;
+              days[i] = day;
+            }
+          });
+        } else if (!interview) {
+          days.forEach((dayObj, i) => {
+            if (dayObj.name === state.day) {
+              const day = { ...dayObj };
+              day.spots++;
+              days[i] = day;
+            }
+          });
+        }
+        return { ...state, appointments, days };
       }
       default:
         // return state
@@ -53,7 +72,6 @@ export default function useApplicationData() {
   // effect hook to fetch data (days, appts) from api then update the state, depends on [] to stop infinit calls
   useEffect(() => {
     Promise.all([
-      // 🔥before merging "testing" branch make sure it works with the new "/" added for /api/days
       Promise.resolve(axios.get("/api/days")),
       Promise.resolve(axios.get("/api/appointments")),
       Promise.resolve(axios.get("/api/interviewers")),
@@ -80,11 +98,11 @@ export default function useApplicationData() {
   // onClick handler for day from DayListItem to select day
   const setDay = (day) => dispatch({ type: SET_DAY, value: day });
 
-  function bookInterview(id, interview) {
+  async function bookInterview(id, interview) {
     const days = [...state.days];
     // reducing the spots only when creating (not when editing) new booking without mutating the state
     if (!state.appointments[id].interview) {
-      state.days.forEach((dayObj, i) => {
+      days.forEach((dayObj, i) => {
         if (dayObj.name === state.day) {
           const day = { ...dayObj };
           day.spots--;
@@ -101,13 +119,12 @@ export default function useApplicationData() {
       [id]: appointment,
     };
 
-    return axios
-      .put(`/api/appointments/${id}`, { interview })
-      .then((res) =>
-        dispatch({ type: SET_INTERVIEW, payload: { appointments, days } })
-      );
+    await axios.put(`/api/appointments/${id}`, { interview });
+    // .then((res) =>
+    dispatch({ type: SET_INTERVIEW, payload: { appointments, days } });
+    // );
   }
-  function cancelInterview(id) {
+  async function cancelInterview(id) {
     const appointment = {
       ...state.appointments[id],
       interview: null,
@@ -118,18 +135,17 @@ export default function useApplicationData() {
     };
     // increasing the spots after deleting a booking without mutating the state
     const days = [...state.days];
-    state.days.forEach((dayObj, i) => {
+    days.forEach((dayObj, i) => {
       if (dayObj.name === state.day) {
         const day = { ...dayObj };
         day.spots++;
         days[i] = day;
       }
     });
-    return axios
-      .delete(`/api/appointments/${id}`, { interview: null })
-      .then((res) =>
-        dispatch({ type: SET_INTERVIEW, payload: { appointments, days } })
-      );
+    await axios.delete(`/api/appointments/${id}`, { interview: null });
+    // .then((res) =>
+    dispatch({ type: SET_INTERVIEW, payload: { appointments, days } });
+    // );
   }
 
   return { state, setDay, bookInterview, cancelInterview };
