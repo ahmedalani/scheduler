@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from "react";
 import axios from "axios";
-const webSocket = new WebSocket("wss://scheduler-lhl.herokuapp.com/");
+
+const webSocket = new WebSocket("wss://alanischeduler.herokuapp.com/");
 
 export default function useApplicationData() {
   // state!
@@ -39,24 +40,12 @@ export default function useApplicationData() {
           ...state.appointments,
           [id]: appointment,
         };
-        const days = [...state.days];
-        // reducing the spots
+
+        let days = [...state.days];
         if (!state.appointments[id].interview) {
-          days.forEach((dayObj, i) => {
-            if (dayObj.name === state.day) {
-              const day = { ...dayObj };
-              day.spots--;
-              days[i] = day;
-            }
-          });
+          days = updateSpotsRemaining("decrement", state);
         } else if (!interview) {
-          days.forEach((dayObj, i) => {
-            if (dayObj.name === state.day) {
-              const day = { ...dayObj };
-              day.spots++;
-              days[i] = day;
-            }
-          });
+          days = updateSpotsRemaining("increment", state);
         }
         return { ...state, appointments, days };
       }
@@ -69,6 +58,22 @@ export default function useApplicationData() {
   }
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  // takse a string argument to increase or decrease spots remaining in Daylist item then return array of days
+  function updateSpotsRemaining(type, state) {
+    const days = [...state.days];
+    days.forEach((dayObj, i) => {
+      if (dayObj.name === state.day) {
+        const day = { ...dayObj };
+        if (type === "increment") {
+          day.spots++;
+        } else if (type === "decrement") {
+          day.spots--;
+        }
+        days[i] = day;
+      }
+    });
+    return days;
+  }
   // effect hook to fetch data (days, appts) from api then update the state, depends on [] to stop infinit calls
   useEffect(() => {
     Promise.all([
@@ -99,16 +104,10 @@ export default function useApplicationData() {
   const setDay = (day) => dispatch({ type: SET_DAY, value: day });
 
   async function bookInterview(id, interview) {
-    const days = [...state.days];
-    // reducing the spots only when creating (not when editing) new booking without mutating the state
+    let days = [...state.days];
+    // reducing the spots only when creating (not when editing) new booking and set the days
     if (!state.appointments[id].interview) {
-      days.forEach((dayObj, i) => {
-        if (dayObj.name === state.day) {
-          const day = { ...dayObj };
-          day.spots--;
-          days[i] = day;
-        }
-      });
+      days = updateSpotsRemaining("decrement", state);
     }
     const appointment = {
       ...state.appointments[id],
@@ -120,9 +119,7 @@ export default function useApplicationData() {
     };
 
     await axios.put(`/api/appointments/${id}`, { interview });
-    // .then((res) =>
     dispatch({ type: SET_INTERVIEW, payload: { appointments, days } });
-    // );
   }
   async function cancelInterview(id) {
     const appointment = {
@@ -133,19 +130,11 @@ export default function useApplicationData() {
       ...state.appointments,
       [id]: appointment,
     };
-    // increasing the spots after deleting a booking without mutating the state
-    const days = [...state.days];
-    days.forEach((dayObj, i) => {
-      if (dayObj.name === state.day) {
-        const day = { ...dayObj };
-        day.spots++;
-        days[i] = day;
-      }
-    });
+    // increasing the spots after deleting a booking
+    const days = updateSpotsRemaining("increment", state);
+
     await axios.delete(`/api/appointments/${id}`, { interview: null });
-    // .then((res) =>
     dispatch({ type: SET_INTERVIEW, payload: { appointments, days } });
-    // );
   }
 
   return { state, setDay, bookInterview, cancelInterview };
