@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from "react";
 import axios from "axios";
-const webSocket = new WebSocket("ws:https://alanischeduler.herokuapp.com");
+const webSocket = new WebSocket("wss://scheduler-lhl.herokuapp.com/");
 
 export default function useApplicationData() {
   // state!
